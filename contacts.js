@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs').promises;
+const { v4: uuid } = require('uuid');
 
 const contactsPath = path.resolve('./db/contacts.json');
 
@@ -8,10 +9,6 @@ async function listContacts() {
         const contactsList = JSON.parse(
             await fs.readFile(contactsPath, 'utf8')
         );
-
-        if (!contactsList || !contactsList.length) return;
-
-        console.log(contactsList);
 
         return contactsList;
     } catch (err) {
@@ -25,15 +22,11 @@ async function getContactById(contactId) {
             await fs.readFile(contactsPath, 'utf8')
         );
 
-        if (!contactsList || !contactsList.length) return;
-
         const contactById = contactsList.find(
             contact => contact.id === contactId.toString()
         );
 
-        console.log(contactById);
-
-        return contactById;
+        return contactById || null;
     } catch (err) {
         console.error(err);
     }
@@ -45,17 +38,25 @@ async function removeContact(contactId) {
             await fs.readFile(contactsPath, 'utf8')
         );
 
-        if (!contactsList || !contactsList.length) return;
+        const stringedContactId = contactId.toString();
 
         const indexRemovedContact = contactsList.findIndex(
-            contact => contact.id === contactId.toString()
+            contact => contact.id === stringedContactId
         );
+
+        console.log(contactId);
+
+        console.log(indexRemovedContact);
+
+        if (indexRemovedContact === -1) {
+            return null;
+        }
 
         const [removedContact] = contactsList.splice(indexRemovedContact, 1);
 
         await fs.writeFile(contactsPath, JSON.stringify(contactsList), 'utf8');
 
-        console.log(removedContact);
+        return removedContact;
     } catch (err) {
         console.error(err);
     }
@@ -67,15 +68,13 @@ async function addContact(name, email, phone) {
             await fs.readFile(contactsPath, 'utf8')
         );
 
-        if (!contactsList || !contactsList.length) return;
+        const newContact = { id: uuid(), name, email, phone };
 
-        const lastId = Number(contactsList[contactsList.length - 1].id);
-
-        contactsList.push({ id: `${lastId + 1}`, name, email, phone });
+        contactsList.push(newContact);
 
         await fs.writeFile(contactsPath, JSON.stringify(contactsList), 'utf8');
 
-        console.log(contactsList[contactsList.length - 1]);
+        return contactsList[contactsList.length - 1];
     } catch (err) {
         console.error(err);
     }
